@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统计每段字数</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            max-width: 600px;
+            min-height: 200px; /* 设置最小高度 */
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            resize: none; /* 禁用手动调整大小 */
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            overflow: hidden; /* 隐藏滚动条 */
+        }
+        textarea:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+        .result-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+        }
+        .result-box {
+            width: 48%;
+            padding: 15px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            white-space: pre-wrap; /* 保持换行格式 */
+            font-size: 16px;
+            word-wrap: break-word;
+            text-align: justify; /* 设置文本两端对齐 */
+            transition: box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .result-box:hover {
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.15);
+        }
+        .total-chars {
+            font-size: 18px;
+            color: #4CAF50;
+            margin-top: 10px;
+            text-align: center; /* 确保总字数居中对齐 */
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, box-shadow 0.3s;
+            font-size: 16px;
+            font-weight: bold; /* 加粗文本 */
+            display: flex;
+            align-items: center; /* 垂直居中 */
+            justify-content: center; /* 水平居中 */
+            margin-top: 20px;
+            width: 100%; /* 使按钮占满父容器的宽度 */
+            max-width: 250px; /* 设置按钮的最大宽度 */
+            text-align: center; /* 确保文本居中 */
+            white-space: pre-wrap; /* 保留换行符和空白符 */
+        }
+        button:hover {
+            background-color: #45a049;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.15);
+        }
+        button:focus {
+            outline: none;
+        }
+    </style>
+    <script>
+        // 自动调整文本框高度
+        function autoGrow(element) {
+            element.style.height = "5px";
+            element.style.height = (element.scrollHeight) + "px";
+        }
+
+        // 统计每段文字的字数，包含标点和不包含标点的处理
+        function countCharsInParagraphs(includePunctuation) {
+            const text = document.getElementById('inputText').value; // 获取文本框内容
+            const lines = text.split('\n'); // 按换行符分割每一行
+            let totalCharsWithPunctuation = 0; // 包含标点的总字数
+            let totalCharsWithoutPunctuation = 0; // 不包含标点的总字数
+
+            const updatedLines = lines.map(line => {
+                if (line.trim() === '') {
+                    return line; // 保持空行
+                }
+
+                // 保留中文字符、数字、标点符号和空白字符
+                const charsWithPunctuation = Array.from(line.matchAll(/[\u4e00-\u9fa5\p{P}\w\s]/gu)).reduce((acc, item) => acc + item[0].length, 0);
+                // 只保留中文字符和空白字符
+                const charsWithoutPunctuation = Array.from(line.matchAll(/[\u4e00-\u9fa5\s]/gu)).reduce((acc, item) => acc + item[0].length, 0);
+
+                totalCharsWithPunctuation += charsWithPunctuation;
+                totalCharsWithoutPunctuation += charsWithoutPunctuation;
+
+                return includePunctuation ? `${line}（字数: ${charsWithPunctuation}字）` : `${line}（字数: ${charsWithoutPunctuation}字）`;
+            });
+
+            const result = updatedLines.join('\n'); // 合并结果行
+            if (includePunctuation) {
+                document.getElementById('result').innerText = result; // 显示包含标点的结果
+                document.getElementById('totalCharsWithPunctuation').innerText = `总字数: ${totalCharsWithPunctuation}字（包含标点）`; // 显示总字数
+            } else {
+                document.getElementById('resultWithoutPunctuation').innerText = result; // 显示不包含标点的结果
+                document.getElementById('totalCharsWithoutPunctuation').innerText = `总字数: ${totalCharsWithoutPunctuation}字（不包含标点）`; // 显示总字数
+            }
+        }
+
+        // 复制结果到剪贴板
+        function copyToClipboard(includePunctuation) {
+            const resultText = includePunctuation ? document.getElementById('result').innerText : document.getElementById('resultWithoutPunctuation').innerText;
+            const textarea = document.createElement('textarea');
+            textarea.value = resultText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('文案已复制到剪贴板'); // 提示用户
+        }
+
+        // 页面加载完成后添加事件监听器
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputText = document.getElementById('inputText');
+            inputText.addEventListener('input', () => {
+                countCharsInParagraphs(true); // 统计包含标点的字数
+                countCharsInParagraphs(false); // 统计不包含标点的字数
+                autoGrow(inputText); // 自动调整文本框高度
+            });
+            autoGrow(inputText); // 初始化时调整文本框高度
+        });
+    </script>
+</head>
+<body>
+    <h1>统计每段字数</h1>
+    <textarea id="inputText" placeholder="请输入文本..." oninput="autoGrow(this)"></textarea><br>
+    <div class="result-container">
+        <div class="result-box">
+            <div id="result"></div>
+            <div id="totalCharsWithPunctuation" class="total-chars">总字数: 0字（包含标点）</div>
+            <button onclick="copyToClipboard(true)">
+一键复制
+            </button>
+        </div>
+        <div class="result-box">
+            <div id="resultWithoutPunctuation"></div>
+            <div id="totalCharsWithoutPunctuation" class="total-chars">总字数: 0字（不包含标点）</div>
+            <button onclick="copyToClipboard(false)">
+一键复制
+            </button>
+        </div>
+    </div>
+</body>
+</html>
